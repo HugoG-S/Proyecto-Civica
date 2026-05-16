@@ -1,0 +1,112 @@
+version: 2
+
+models:
+  - name: stg_steamspy__games
+    description: >
+      Vista que extrae y limpia los campos del JSON de RAW_STEAMSPY_DETAILS.
+      Una fila por juego. Fuente principal de métricas de jugadores,
+      reviews, precios y tags de comunidad.
+    columns:
+
+      - name: app_id
+        description: "Identificador único del juego en Steam. Natural key."
+        tests:
+          - unique
+          - not_null
+
+      - name: name
+        description: "Nombre del juego en Steam."
+        tests:
+          - not_null
+
+      - name: developer
+        description: "Nombre del estudio desarrollador."
+
+      - name: publisher
+        description: "Nombre del publisher. Puede coincidir con developer."
+
+      - name: price_usd
+        description: "Precio actual en dólares. 0.0 si es Free to Play."
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 999
+
+      - name: initial_price_usd
+        description: "Precio original antes del descuento activo."
+
+      - name: discount_pct
+        description: "Porcentaje de descuento activo. 0 si no hay descuento."
+        tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 100
+
+      - name: current_players
+        description: "Jugadores activos en el momento exacto del snapshot (CCU)."
+        tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+
+      - name: avg_playtime_forever_min
+        description: "Tiempo medio jugado por todos los propietarios en minutos."
+
+      - name: avg_playtime_2weeks_min
+        description: "Tiempo medio jugado en las últimas 2 semanas en minutos."
+
+      - name: median_playtime_forever_min
+        description: "Mediana del tiempo jugado total por propietarios en minutos."
+
+      - name: median_playtime_2weeks_min
+        description: "Mediana del tiempo jugado en las últimas 2 semanas en minutos."
+
+      - name: positive_reviews
+        description: "Total acumulado de reviews positivas."
+        tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+
+      - name: negative_reviews
+        description: "Total acumulado de reviews negativas."
+        tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+
+      - name: review_score
+        description: >
+          Score calculado: positive / (positive + negative).
+          Valor entre 0 y 1. NULL si el juego no tiene reviews.
+        tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 1
+              strictly: false
+
+      - name: owners_range
+        description: >
+          Estimación de propietarios según SteamSpy.
+          Viene como rango string: '10,000,000 .. 20,000,000'.
+          Se parseará en intermediate para obtener min y max.
+
+      - name: genres
+        description: "Géneros del juego separados por coma. Ej: 'Action, Free To Play'."
+
+      - name: languages
+        description: "Idiomas soportados separados por coma."
+
+      - name: tags
+        description: >
+          Tags de comunidad como objeto JSON VARIANT.
+          Formato: clave=nombre_tag, valor=número_de_votos.
+          Se desanidará en intermediate con LATERAL FLATTEN.
+
+      - name: _ingested_at
+        description: "Timestamp de cuando Python insertó el dato en Bronze."
+        tests:
+          - not_null
+
+      - name: _loaded_at
+        description: "Timestamp de cuando dbt procesó el modelo."
+        tests:
+          - not_null
