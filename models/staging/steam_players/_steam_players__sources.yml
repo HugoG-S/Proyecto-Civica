@@ -1,0 +1,28 @@
+version: 2
+
+sources:
+  - name: steam_players
+    description: "Steam Web API oficial. Jugadores activos en tiempo
+                  real y porcentajes globales de desbloqueo de logros."
+    database: steam_dev_bronze
+    schema: raw
+
+    tables:
+      - name: raw_steam_players
+        description: "Snapshot de jugadores activos y logros por juego.
+                      Crece con cada ejecución de la ingesta."
+        columns:
+          - name: load_id
+            description: "ID único de carga generado por Snowflake (UUID)"
+          - name: ingested_at
+            description: "Timestamp de cuando se insertó la fila en Bronze"
+          - name: source
+            description: "Origen del dato: steam_web_api"
+          - name: appid
+            description: "ID del juego en Steam"
+          - name: player_count
+            description: "Número de jugadores activos en el momento del snapshot"
+          - name: snapshot_at
+            description: "Timestamp exacto de la captura — clave del modelo incremental"
+          - name: raw_data
+            description: "JSON completo con jugadores activos y logros"
