@@ -4,13 +4,13 @@ models:
   - name: stg_steam_store__games
     description: >
       Vista que extrae la metadata oficial de la Steam Store API.
-      Complementa a stg_steamspy__games con géneros oficiales,
-      categorías funcionales, plataformas, precios en EUR e idiomas.
+      Complementa a stg_steamspy__games con generos oficiales,
+      categorias funcionales, plataformas, precios en EUR e idiomas.
       Una fila por juego.
     columns:
 
       - name: app_id
-        description: "Identificador único del juego en Steam. Natural key."
+        description: "Identificador unico del juego en Steam. Natural key."
         tests:
           - unique
           - not_null
@@ -21,10 +21,10 @@ models:
           - not_null
 
       - name: app_type
-        description: "Tipo de aplicación. Ej: game, dlc, demo, software."
+        description: "Tipo de aplicacion. Ej: game, dlc, demo, software."
 
       - name: short_description
-        description: "Descripción corta del juego en la Steam Store."
+        description: "Descripcion corta del juego en la Steam Store."
 
       - name: developer
         description: "Primer desarrollador del array de developers."
@@ -57,53 +57,63 @@ models:
         tests:
           - not_null
 
-      - name: release_date_raw
-        description: "Fecha de lanzamiento como string. Ej: '21 Aug, 2012'."
-
       - name: is_coming_soon
-        description: "true si el juego aún no ha sido lanzado."
+        description: "true si el juego aun no ha sido lanzado oficialmente."
+
+      - name: is_early_access
+        description: >
+          true si el juego esta en Early Access.
+          Se detecta comprobando si el genero Early Access esta
+          presente en el array de generos oficiales de Valve.
+        tests:
+          - not_null
+          - accepted_values:
+              values: [true, false]
+
+      - name: release_date_raw
+        description: "Fecha de lanzamiento como string. Ej: 21 Aug, 2012."
 
       - name: genres_raw
         description: >
-          Array VARIANT de géneros oficiales de Valve.
-          Formato: [{"id":"1","description":"Action"}, ...].
-          Se desanidará en intermediate.
+          Array VARIANT de generos oficiales de Valve.
+          Formato: id y description por cada genero.
+          Se desanidara en intermediate.
 
       - name: categories_raw
         description: >
-          Array VARIANT de categorías funcionales.
+          Array VARIANT de categorias funcionales.
           Ejemplos: Single-player, Co-op, Steam Achievements, VR Support.
-          Se desanidará en intermediate.
+          Se desanidara en intermediate.
 
       - name: platform_windows
-        description: "true si el juego está disponible en Windows."
+        description: "true si el juego esta disponible en Windows."
         tests:
           - not_null
 
       - name: platform_mac
-        description: "true si el juego está disponible en Mac."
+        description: "true si el juego esta disponible en Mac."
         tests:
           - not_null
 
       - name: platform_linux
-        description: "true si el juego está disponible en Linux."
+        description: "true si el juego esta disponible en Linux."
         tests:
           - not_null
 
       - name: supported_languages_raw
         description: >
           String con idiomas soportados. Incluye marcadores de audio
-          con formato especial. Se parseará en intermediate.
+          con formato especial. Se parseara en intermediate.
 
       - name: website
         description: "URL del sitio web oficial del juego. Puede ser NULL."
 
       - name: _ingested_at
-        description: "Timestamp de cuando Python insertó el dato en Bronze."
+        description: "Timestamp de cuando Python inserto el dato en Bronze."
         tests:
           - not_null
 
       - name: _loaded_at
-        description: "Timestamp de cuando dbt procesó el modelo."
+        description: "Timestamp de cuando dbt proceso el modelo."
         tests:
           - not_null

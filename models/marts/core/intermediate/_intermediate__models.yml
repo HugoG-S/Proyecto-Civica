@@ -1,0 +1,163 @@
+version: 2
+
+models:
+  - name: int_games_enriched
+    description: >
+      Une las tres fuentes de staging por app_id.
+      Primera capa de logica de negocio del proyecto.
+      Base para todas las dimensiones y facts de Gold.
+      Una fila por juego por snapshot.
+    columns:
+
+      - name: app_id
+        description: "ID unico del juego en Steam. Natural key."
+        tests:
+          - not_null
+
+      - name: name
+        description: "Nombre del juego. Prioriza Steam Store sobre SteamSpy."
+        tests:
+          - not_null
+
+      - name: developer
+        description: "Desarrollador. Prioriza Steam Store sobre SteamSpy con COALESCE."
+
+      - name: publisher
+        description: "Publisher. Prioriza Steam Store sobre SteamSpy con COALESCE."
+
+      - name: price_usd
+        description: "Precio en dolares de SteamSpy."
+
+      - name: price_eur
+        description: "Precio en euros de Steam Store. NULL si es Free to Play."
+
+      - name: discount_pct
+        description: "Porcentaje de descuento activo."
+        tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 100
+
+      - name: is_free
+        description: "true si el juego es Free to Play."
+        tests:
+          - not_null
+
+      - name: price_tier
+        description: "Segmento de precio: free / budget / mid / premium / aaa."
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['free', 'budget', 'mid', 'premium', 'aaa']
+
+      - name: owners_min
+        description: "Limite inferior del rango de propietarios estimado por SteamSpy."
+
+      - name: owners_max
+        description: "Limite superior del rango de propietarios estimado por SteamSpy."
+
+      - name: positive_reviews
+        description: "Total de reviews positivas acumuladas."
+
+      - name: negative_reviews
+        description: "Total de reviews negativas acumuladas."
+
+      - name: total_reviews
+        description: "Suma de reviews positivas y negativas."
+
+      - name: review_score
+        description: "Score entre 0 y 1. positive / (positive + negative)."
+        tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 1
+
+      - name: review_score_label
+        description: "Etiqueta de review: Overwhelmingly Positive, Very Positive, Mixed, etc."
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['Overwhelmingly Positive', 'Very Positive', 'Mostly Positive', 'Mixed', 'Mostly Negative', 'Overwhelmingly Negative']
+
+      - name: current_players
+        description: "Jugadores activos en el momento del snapshot."
+
+      - name: platform_windows
+        description: "true si disponible en Windows."
+        tests:
+          - not_null
+
+      - name: platform_mac
+        description: "true si disponible en Mac."
+        tests:
+          - not_null
+
+      - name: platform_linux
+        description: "true si disponible en Linux."
+        tests:
+          - not_null
+
+      - name: is_multi_platform
+        description: "true si disponible en mas de una plataforma."
+        tests:
+          - not_null
+
+      - name: snapshot_at
+        description: "Timestamp del snapshot de ingesta."
+        tests:
+          - not_null
+
+      - name: _loaded_at
+        description: "Timestamp de cuando dbt proceso el modelo."
+        tests:
+          - not_null
+
+  - name: int_player_trends
+    description: >
+      Prepara series temporales de jugadores activos.
+      Calcula tendencias comparando cada snapshot con el anterior
+      usando la funcion de ventana LAG.
+      Una fila por juego por snapshot.
+    columns:
+
+      - name: app_id
+        description: "ID unico del juego en Steam."
+        tests:
+          - not_null
+
+      - name: name
+        description: "Nombre del juego."
+        tests:
+          - not_null
+
+      - name: current_players
+        description: "Jugadores activos en el momento del snapshot."
+        tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+
+      - name: previous_players
+        description: "Jugadores activos en el snapshot anterior. NULL si es el primero."
+
+      - name: players_delta
+        description: "Diferencia absoluta de jugadores respecto al snapshot anterior."
+
+      - name: players_pct_change
+        description: "Variacion porcentual respecto al snapshot anterior."
+
+      - name: trend_label
+        description: "Etiqueta de tendencia: growing / stable / declining / first_snapshot."
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['growing', 'stable', 'declining', 'first_snapshot']
+
+      - name: snapshot_at
+        description: "Timestamp del snapshot."
+        tests:
+          - not_null
+
+      - name: _loaded_at
+        description: "Timestamp de cuando dbt proceso el modelo."
+        tests:
+          - not_null

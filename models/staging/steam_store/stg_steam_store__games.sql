@@ -2,34 +2,30 @@
 -- Modelo:      stg_steam_store__games
 -- Capa:        Silver - Staging
 -- Fuente:      STEAM_DEV_BRONZE.RAW.RAW_STEAM_STORE
--- Descripción: Extrae y limpia la metadata oficial de la
+-- Descripcion: Extrae y limpia la metadata oficial de la
 --              Steam Store API. Complementa a stg_steamspy
---              con géneros oficiales, categorías, plataformas,
+--              con generos oficiales, categorias, plataformas,
 --              idiomas desglosados y precios en EUR.
--- Materialización: view
+-- Materializacion: view
 -- Dependencias: source('steam_store', 'raw_steam_store')
 -- =============================================================
 
 WITH source AS (
 
-    -- Paso 1: leer de Bronze
     SELECT * FROM {{ source('steam_store', 'raw_steam_store') }}
 
 ),
 
 renamed AS (
 
-    -- Paso 2: extraer campos del VARIANT
-    -- La Steam Store API devuelve una estructura más compleja
-    -- que SteamSpy — géneros y categorías son arrays de objetos
     SELECT
 
-        -- Identificación
+        -- Identificacion
         RAW_DATA:steam_appid::NUMBER                        AS app_id,
         RAW_DATA:name::VARCHAR                              AS name,
         RAW_DATA:type::VARCHAR                              AS app_type,
 
-        -- Descripción
+        -- Descripcion
         RAW_DATA:short_description::VARCHAR                 AS short_description,
 
         -- Desarrollador y publisher
@@ -51,12 +47,24 @@ renamed AS (
         RAW_DATA:release_date:date::VARCHAR                 AS release_date_raw,
         RAW_DATA:release_date:coming_soon::BOOLEAN          AS is_coming_soon,
 
-        -- Géneros oficiales de Valve
+        -- Early Access
+        -- Steam no tiene un campo booleano directo para Early Access
+        -- Lo detectamos comprobando si el genero "Early Access" esta presente
+        -- en el array de generos oficiales de Valve
+        CASE
+            WHEN ARRAY_CONTAINS(
+                'Early Access'::VARIANT,
+                RAW_DATA:genres::VARIANT
+            ) THEN true
+            ELSE false
+        END                                                 AS is_early_access,
+
+        -- Generos oficiales de Valve
         -- Vienen como array de objetos: [{"id":"1","description":"Action"}]
         -- Se mantiene como VARIANT para desanidar en intermediate
         RAW_DATA:genres::VARIANT                            AS genres_raw,
 
-        -- Categorías funcionales
+        -- Categorias funcionales
         -- Ejemplos: Single-player, Co-op, Steam Achievements, VR Support
         -- Se mantiene como VARIANT para desanidar en intermediate
         RAW_DATA:categories::VARIANT                        AS categories_raw,
@@ -85,7 +93,6 @@ renamed AS (
 
 final AS (
 
-    -- Paso 3: filtro de calidad mínimo
     SELECT * FROM renamed
     WHERE app_id IS NOT NULL
 
