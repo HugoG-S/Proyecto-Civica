@@ -1,0 +1,91 @@
+version: 2
+
+models:
+  - name: stg_steam_players__snapshots
+    description: >
+      Vista que extrae los datos de jugadores activos por juego.
+      Una fila por juego por ejecución de ingesta.
+      Es la base del modelo incremental fct_game_snapshots en Gold.
+    columns:
+
+      - name: app_id
+        description: "Identificador único del juego en Steam. Natural key."
+        tests:
+          - not_null
+
+      - name: current_players
+        description: "Jugadores activos en el momento exacto del snapshot."
+        tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+
+      - name: snapshot_at
+        description: >
+          Timestamp exacto de la captura de jugadores.
+          Clave del modelo incremental en Gold: solo se procesan
+          filas con snapshot_at mayor que el máximo ya cargado.
+        tests:
+          - not_null
+
+      - name: player_count_raw
+        description: "Player count extraído directamente del JSON anidado. Verificación cruzada con current_players."
+
+      - name: _ingested_at
+        description: "Timestamp de cuando Python insertó el dato en Bronze."
+        tests:
+          - not_null
+
+      - name: _loaded_at
+        description: "Timestamp de cuando dbt procesó el modelo."
+        tests:
+          - not_null
+
+  - name: stg_steam_players__achievements
+    description: >
+      Vista que desanida el array de logros del JSON de RAW_STEAM_PLAYERS.
+      Una fila por logro por juego por snapshot.
+      Base para fct_achievement_stats en Gold.
+    columns:
+
+      - name: app_id
+        description: "Identificador único del juego en Steam."
+        tests:
+          - not_null
+
+      - name: achievement_name
+        description: "Nombre interno del logro en Steam."
+        tests:
+          - not_null
+
+      - name: unlock_pct
+        description: >
+          Porcentaje global de jugadores que han desbloqueado este logro.
+          Valor entre 0 y 100.
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 100
+
+      - name: difficulty_label
+        description: >
+          Clasificación de dificultad calculada a partir de unlock_pct.
+          common: >50% | uncommon: 20-50% | rare: 5-20% | ultra_rare: <5%
+        tests:
+          - accepted_values:
+              values: ['common', 'uncommon', 'rare', 'ultra_rare']
+
+      - name: snapshot_at
+        description: "Timestamp del snapshot de la ingesta."
+        tests:
+          - not_null
+
+      - name: _ingested_at
+        description: "Timestamp de cuando Python insertó el dato en Bronze."
+        tests:
+          - not_null
+
+      - name: _loaded_at
+        description: "Timestamp de cuando dbt procesó el modelo."
+        tests:
+          - not_null
