@@ -1,6 +1,6 @@
 # ==============================================================
 # STEAM Data Engineering — dbt Project Configuration
-# Proyecto: Cívica | Mayo 2026
+# Proyecto: Civica | Mayo 2026
 # ==============================================================
 
 name: 'civica_steam'
@@ -12,10 +12,10 @@ profile: 'default'
 # ==============================================================
 # Rutas del proyecto
 # ==============================================================
-model-paths: ["models"]        # modelos SQL de transformación
+model-paths: ["models"]        # modelos SQL de transformacion
 analysis-paths: ["analyses"]   # queries ad-hoc que no generan tablas
 test-paths: ["tests"]          # tests de negocio personalizados
-seed-paths: ["seeds"]          # archivos CSV estáticos (ej: catálogos)
+seed-paths: ["seeds"]          # archivos CSV estaticos (ej: catalogos)
 macro-paths: ["macros"]        # funciones Jinja reutilizables
 snapshot-paths: ["snapshots"]  # modelos SCD Type 2 (ej: dim_games)
 
@@ -30,36 +30,37 @@ clean-targets:
 # Accesibles desde cualquier modelo con {{ var('nombre') }}
 # ==============================================================
 vars:
-  # Fecha mínima para filtros en modelos incrementales
+  # Fecha minima para filtros en modelos incrementales
   min_date: '2020-01-01'
 
 # ==============================================================
-# Configuración de modelos por capa
+# Configuracion de modelos por capa
 # Arquitectura medallion:
-#   Bronze → datos crudos (Python, no gestionado por dbt)
-#   Silver → staging (vistas que limpian Bronze)
-#   Gold   → marts (dimensiones y facts para consumo BI)
+#   Bronze -> datos crudos (Python, no gestionado por dbt)
+#   Silver -> staging + intermediate (vistas que limpian y enriquecen)
+#   Gold   -> marts (dimensiones y facts para consumo BI)
 # ==============================================================
 models:
   civica_steam:
 
     staging:
-      # Vista SQL — lee de Bronze y limpia el JSON VARIANT
+      # Vista SQL - lee de Bronze y limpia el JSON VARIANT
       # Una vista por cada tabla RAW de Bronze
-      # No aplica lógica de negocio, solo limpieza y tipado
+      # No aplica logica de negocio, solo limpieza y tipado
       +materialized: view
-      # Escribe en STEAM_DEV_SILVER.DEV_STAGING en desarrollo
-      # Escribe en STEAM_PRO_SILVER.STAGING en producción
+      # Dev:  STEAM_DEV_SILVER.DEV_STAGING
+      # Prod: STEAM_PRO_SILVER.STAGING
+      +database: "{{ 'STEAM_DEV_SILVER' if target.name == 'default' else 'STEAM_PRO_SILVER' }}"
       +schema: staging
-      # Permite ejecutar solo staging: dbt build --select tag:staging
       +tags: ["staging"]
 
     marts:
-      # Tabla física — materializada en disco para queries rápidas
-      # Aquí viven dims, facts e intermediate
+      # Tabla fisica - materializada en disco para queries rapidas
+      # Aqui viven dims y facts del modelo dimensional
       +materialized: table
-      # Escribe en STEAM_DEV_SILVER.DEV_MARTS en desarrollo
-      # Escribe en STEAM_PRO_SILVER.MARTS en producción
+      # Dev:  STEAM_DEV_GOLD.DEV_MARTS
+      # Prod: STEAM_PRO_GOLD.MARTS
+      +database: "{{ 'STEAM_DEV_GOLD' if target.name == 'default' else 'STEAM_PRO_GOLD' }}"
       +schema: marts
       +tags: ["marts"]
 
@@ -67,10 +68,12 @@ models:
         +tags: ["core"]
 
         intermediate:
-          # Vista SQL dentro de marts — lógica de negocio reutilizable
+          # Vista SQL dentro de marts - logica de negocio reutilizable
           # Une las tres fuentes por app_id antes de llegar a dims y facts
-          # No está pensada para consumo directo por BI
+          # No esta pensada para consumo directo por BI
           +materialized: view
-          # Escribe en STEAM_DEV_SILVER.DEV_INTERMEDIATE en desarrollo
+          # Dev:  STEAM_DEV_SILVER.DEV_INTERMEDIATE
+          # Prod: STEAM_PRO_SILVER.INTERMEDIATE
+          +database: "{{ 'STEAM_DEV_SILVER' if target.name == 'default' else 'STEAM_PRO_SILVER' }}"
           +schema: intermediate
           +tags: ["intermediate"]
