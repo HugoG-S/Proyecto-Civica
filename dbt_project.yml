@@ -39,6 +39,10 @@ vars:
 #   Bronze -> datos crudos (Python, no gestionado por dbt)
 #   Silver -> staging + intermediate (vistas que limpian y enriquecen)
 #   Gold   -> marts (dimensiones y facts para consumo BI)
+#
+# La variable DBT_STEAM_ENV controla el entorno:
+#   DEV: DBT_STEAM_ENV=STEAM_DEV -> STEAM_DEV_SILVER / STEAM_DEV_GOLD
+#   PRO: DBT_STEAM_ENV=STEAM_PRO -> STEAM_PRO_SILVER / STEAM_PRO_GOLD
 # ==============================================================
 models:
   civica_steam:
@@ -49,8 +53,8 @@ models:
       # No aplica logica de negocio, solo limpieza y tipado
       +materialized: view
       # Dev:  STEAM_DEV_SILVER.DEV_STAGING
-      # Prod: STEAM_PRO_SILVER.STAGING
-      +database: "{{ 'STEAM_DEV_SILVER' if target.name == 'default' else 'STEAM_PRO_SILVER' }}"
+      # Prod: STEAM_PRO_SILVER.PRO_STAGING
+      +database: "{{ env_var('DBT_STEAM_ENV', 'STEAM_DEV') ~ '_SILVER' }}"
       +schema: staging
       +tags: ["staging"]
 
@@ -59,8 +63,8 @@ models:
       # Aqui viven dims y facts del modelo dimensional
       +materialized: table
       # Dev:  STEAM_DEV_GOLD.DEV_MARTS
-      # Prod: STEAM_PRO_GOLD.MARTS
-      +database: "{{ 'STEAM_DEV_GOLD' if target.name == 'default' else 'STEAM_PRO_GOLD' }}"
+      # Prod: STEAM_PRO_GOLD.PRO_MARTS
+      +database: "{{ env_var('DBT_STEAM_ENV', 'STEAM_DEV') ~ '_GOLD' }}"
       +schema: marts
       +tags: ["marts"]
 
@@ -73,7 +77,7 @@ models:
           # No esta pensada para consumo directo por BI
           +materialized: view
           # Dev:  STEAM_DEV_SILVER.DEV_INTERMEDIATE
-          # Prod: STEAM_PRO_SILVER.INTERMEDIATE
-          +database: "{{ 'STEAM_DEV_SILVER' if target.name == 'default' else 'STEAM_PRO_SILVER' }}"
+          # Prod: STEAM_PRO_SILVER.PRO_INTERMEDIATE
+          +database: "{{ env_var('DBT_STEAM_ENV', 'STEAM_DEV') ~ '_SILVER' }}"
           +schema: intermediate
           +tags: ["intermediate"]
