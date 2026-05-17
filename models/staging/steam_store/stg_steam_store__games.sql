@@ -6,6 +6,7 @@
 --              Steam Store API. Complementa a stg_steamspy
 --              con generos oficiales, categorias, plataformas,
 --              idiomas desglosados y precios en EUR.
+--              Una fila por juego (registro mas reciente).
 -- Materializacion: view
 -- Dependencias: source('steam_store', 'raw_steam_store')
 -- =============================================================
@@ -91,9 +92,25 @@ renamed AS (
 
 ),
 
+deduped AS (
+
+    -- Paso 3: deduplicacion por app_id
+    -- Bronze puede tener multiples filas por juego si se ejecuta
+    -- la ingesta varias veces. Nos quedamos solo con la mas reciente.
+    SELECT *
+    FROM renamed
+    QUALIFY ROW_NUMBER() OVER (
+        PARTITION BY app_id
+        ORDER BY _ingested_at DESC
+    ) = 1
+
+),
+
 final AS (
 
-    SELECT * FROM renamed
+    -- Paso 4: filtro de calidad minimo
+    -- La CTE final siempre se llama 'final' por convencion dbt
+    SELECT * FROM deduped
     WHERE app_id IS NOT NULL
 
 )
