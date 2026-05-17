@@ -1,0 +1,43 @@
+version: 2
+
+sources:
+  - name: steamspy
+    description: "Datos de SteamSpy API. Estimaciones de jugadores,
+                  reviews, precios y tags de comunidad."
+    database: steam_dev_bronze
+    schema: raw
+
+    tables:
+      - name: raw_steamspy_top100
+        description: "Top 100 juegos por jugadores activos en las
+                      últimas 2 semanas."
+        columns:
+          - name: load_id
+            description: "ID único de carga generado por Snowflake (UUID)"
+          - name: ingested_at
+            description: "Timestamp de cuando se insertó la fila en Bronze"
+          - name: source
+            description: "Origen del dato: steamspy_api"
+          - name: endpoint
+            description: "Endpoint consultado: top100in2weeks"
+          - name: appid
+            description: "ID del juego en Steam"
+          - name: raw_data
+            description: "JSON completo tal como devuelve la API de SteamSpy"
+
+      - name: raw_steamspy_details
+        description: "Detalle completo de cada juego: reviews, precio,
+                      owners, playtime y tags de comunidad."
+        columns:
+          - name: load_id
+            description: "ID único de carga generado por Snowflake (UUID)"
+          - name: ingested_at
+            description: "Timestamp de cuando se insertó la fila en Bronze"
+          - name: source
+            description: "Origen del dato: steamspy_api"
+          - name: endpoint
+            description: "Endpoint consultado: appdetails"
+          - name: appid
+            description: "ID del juego en Steam"
+          - name: raw_data
+            description: "JSON completo con todos los campos de SteamSpy"

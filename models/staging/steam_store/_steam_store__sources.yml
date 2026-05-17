@@ -1,0 +1,29 @@
+version: 2
+
+sources:
+  - name: steam_store
+    description: "Steam Store API oficial de Valve. Metadata completa
+                  de cada juego: géneros, categorías, idiomas,
+                  plataformas, precios en EUR y media."
+    database: steam_dev_bronze
+    schema: raw
+
+    tables:
+      - name: raw_steam_store
+        description: "Metadata oficial de cada juego consultada con
+                      country_code=es para precios en euros."
+        columns:
+          - name: load_id
+            description: "ID único de carga generado por Snowflake (UUID)"
+          - name: ingested_at
+            description: "Timestamp de cuando se insertó la fila en Bronze"
+          - name: source
+            description: "Origen del dato: steam_store_api"
+          - name: endpoint
+            description: "Endpoint consultado: appdetails"
+          - name: appid
+            description: "ID del juego en Steam"
+          - name: country_code
+            description: "Código de país usado para precios: es (España)"
+          - name: raw_data
+            description: "JSON completo con metadata oficial de la Steam Store"
