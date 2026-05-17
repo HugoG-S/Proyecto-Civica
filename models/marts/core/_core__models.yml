@@ -1,0 +1,268 @@
+version: 2
+
+models:
+
+  - name: dim_price_tier
+    description: >
+      Catalogo estatico de segmentos de precio.
+      Define los cinco tiers usados en int_games_enriched
+      y fct_game_snapshots. No depende de ninguna fuente externa.
+    columns:
+      - name: price_tier_key
+        description: "Surrogate key del tier de precio."
+        tests:
+          - unique
+          - not_null
+      - name: tier_label
+        description: "Etiqueta del tier: free / budget / mid / premium / aaa."
+        tests:
+          - unique
+          - not_null
+          - accepted_values:
+              values: ['free', 'budget', 'mid', 'premium', 'aaa']
+      - name: min_price_usd
+        description: "Precio minimo del rango en dolares."
+        tests:
+          - not_null
+      - name: display_order
+        description: "Orden para visualizacion en dashboards."
+        tests:
+          - not_null
+
+  - name: dim_date
+    description: >
+      Dimension de fechas generada con dbt_utils.date_spine.
+      Cubre desde 2020-01-01 hasta 2030-12-31.
+      Permite agrupar por ano, trimestre, mes, semana y dia
+      sin calcular nada en la query de BI.
+    columns:
+      - name: date_key
+        description: "Surrogate key en formato YYYYMMDD. Ej: 20260517."
+        tests:
+          - unique
+          - not_null
+      - name: full_date
+        description: "Fecha completa en formato DATE."
+        tests:
+          - unique
+          - not_null
+      - name: year
+        description: "Ano de la fecha."
+        tests:
+          - not_null
+      - name: month
+        description: "Mes de la fecha (1-12)."
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_between:
+              arguments:
+                min_value: 1
+                max_value: 12
+      - name: day_of_week
+        description: "Dia de la semana (1=domingo, 7=sabado en Snowflake)."
+        tests:
+          - not_null
+      - name: is_weekend
+        description: "true si es sabado o domingo."
+        tests:
+          - not_null
+
+  - name: dim_genre
+    description: >
+      Catalogo de generos unicos extraido de int_games_enriched.
+      Permite analisis por genero sin depender de strings en la fact.
+    columns:
+      - name: genre_key
+        description: "Surrogate key generado con md5 del genre_name."
+        tests:
+          - unique
+          - not_null
+      - name: genre_name
+        description: "Nombre del genero. Ej: Action, RPG, Free To Play."
+        tests:
+          - unique
+          - not_null
+      - name: genre_category
+        description: "Clasificacion: core_genre / monetization_model / release_state / other."
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['core_genre', 'monetization_model', 'release_state', 'other']
+
+  - name: dim_developer
+    description: >
+      Catalogo de desarrolladores extraido de int_games_enriched.
+      Incluye metricas agregadas por developer para analisis de estudio.
+    columns:
+      - name: developer_key
+        description: "Surrogate key generado con md5 del developer_name."
+        tests:
+          - unique
+          - not_null
+      - name: developer_name
+        description: "Nombre del estudio desarrollador."
+        tests:
+          - unique
+          - not_null
+      - name: is_indie
+        description: "true si el developer tiene el genero Indie en sus juegos."
+        tests:
+          - not_null
+      - name: total_games_on_steam
+        description: "Numero de juegos del developer en el top 100."
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_between:
+              arguments:
+                min_value: 1
+
+  - name: dim_games
+    description: >
+      Dimension principal de juegos con SCD Type 2.
+      Rastrea cambios historicos en atributos del juego
+      como precio, estado Early Access o nombre.
+      Una fila por version del juego.
+    columns:
+      - name: game_key
+        description: "Surrogate key. Identifica una version del juego."
+        tests:
+          - unique
+          - not_null
+      - name: app_id
+        description: "ID del juego en Steam. Natural key."
+        tests:
+          - not_null
+      - name: name
+        description: "Nombre del juego."
+        tests:
+          - not_null
+      - name: price_tier
+        description: "Segmento de precio: free / budget / mid / premium / aaa."
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['free', 'budget', 'mid', 'premium', 'aaa']
+      - name: is_free
+        description: "true si el juego es Free to Play."
+        tests:
+          - not_null
+      - name: is_current
+        description: "true si es la version vigente del juego (SCD Type 2)."
+        tests:
+          - not_null
+      - name: valid_from
+        description: "Inicio de vigencia del registro (SCD Type 2)."
+        tests:
+          - not_null
+
+  - name: fct_game_snapshots
+    description: >
+      Tabla de hechos principal. Granularidad: un snapshot
+      por juego por ejecucion de ingesta. Modelo INCREMENTAL.
+      Permite series temporales de popularidad, precios y reviews.
+    columns:
+      - name: snapshot_key
+        description: "Surrogate key: hash(app_id + snapshot_at). PK de la fact."
+        tests:
+          - unique
+          - not_null
+      - name: game_key
+        description: "FK a dim_games."
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_games')
+                field: game_key
+      - name: date_key
+        description: "FK a dim_date."
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_key
+      - name: current_players
+        description: "Jugadores activos en el momento del snapshot."
+        tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              arguments:
+                min_value: 0
+      - name: review_score
+        description: "Score entre 0 y 1. positive / (positive + negative)."
+        tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              arguments:
+                min_value: 0
+                max_value: 1
+      - name: price_usd
+        description: "Precio en dolares en el momento del snapshot."
+        tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              arguments:
+                min_value: 0
+      - name: discount_pct
+        description: "Porcentaje de descuento activo."
+        tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              arguments:
+                min_value: 0
+                max_value: 100
+      - name: snapshot_at
+        description: "Timestamp del snapshot. Clave del modelo incremental."
+        tests:
+          - not_null
+
+  - name: fct_achievement_stats
+    description: >
+      Tabla de hechos de logros. Granularidad: un registro
+      por logro por juego por snapshot. Modelo INCREMENTAL.
+      Permite analizar dificultad de logros y engagement de jugadores.
+    columns:
+      - name: stat_key
+        description: "Surrogate key: hash(app_id + achievement_name + snapshot_at)."
+        tests:
+          - unique
+          - not_null
+      - name: game_key
+        description: "FK a dim_games."
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_games')
+                field: game_key
+      - name: date_key
+        description: "FK a dim_date."
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_key
+      - name: achievement_name
+        description: "Nombre interno del logro en Steam."
+        tests:
+          - not_null
+      - name: unlock_pct
+        description: "Porcentaje global de jugadores que han desbloqueado el logro."
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_between:
+              arguments:
+                min_value: 0
+                max_value: 100
+      - name: difficulty_label
+        description: "Clasificacion de dificultad del logro."
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['common', 'uncommon', 'rare', 'ultra_rare']
+      - name: difficulty_rank
+        description: "Ranking de dificultad dentro del juego. 1 = mas dificil."
+        tests:
+          - not_null
+      - name: snapshot_at
+        description: "Timestamp del snapshot."
+        tests:
+          - not_null
