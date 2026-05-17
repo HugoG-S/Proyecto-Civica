@@ -24,7 +24,14 @@ store AS (
 
 players AS (
 
-    SELECT * FROM {{ ref('stg_steam_players__snapshots') }}
+    -- Solo tomamos el snapshot mas reciente de cada juego
+    -- para evitar multiplicar filas en el JOIN
+    SELECT *
+    FROM {{ ref('stg_steam_players__snapshots') }}
+    QUALIFY ROW_NUMBER() OVER (
+        PARTITION BY app_id
+        ORDER BY snapshot_at DESC
+    ) = 1
 
 ),
 
@@ -118,7 +125,11 @@ joined AS (
 
         -- Snapshot
         -- Usamos el snapshot_at de players como timestamp de referencia
-        COALESCE(pl.snapshot_at, sp._ingested_at)  AS snapshot_at,
+        COALESCE(
+            pl.snapshot_at,
+            (SELECT MAX(snapshot_at) 
+            FROM {{ ref('stg_steam_players__snapshots') }})
+        )                                           AS snapshot_at,
 
         -- Metadata
         sp._ingested_at,
