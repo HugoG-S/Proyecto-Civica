@@ -1,17 +1,15 @@
 {% macro generate_database_name(custom_database_name=none, node=none) -%}
 
-    {%- set default_database = target.database -%}
+    {%- set fqn = node.fqn -%}
 
-    {%- if node.fqn[1] == 'marts' and node.fqn[2] != 'intermediate' -%}
-        {%- if target.database == 'STEAM_DEV_SILVER' -%}
-            STEAM_DEV_GOLD
-        {%- elif target.database == 'STEAM_PRO_SILVER' -%}
+    {%- if fqn[1] == 'marts' and (fqn | length < 4 or fqn[3] != 'intermediate') -%}
+        {%- if 'PRO' in target.schema -%}
             STEAM_PRO_GOLD
         {%- else -%}
-            {{ default_database }}
+            STEAM_DEV_GOLD
         {%- endif -%}
     {%- else -%}
-        {{ default_database }}
+        {{ target.database }}
     {%- endif -%}
 
 {%- endmacro %}
