@@ -35,8 +35,9 @@ models:
         description: "Porcentaje de descuento activo."
         tests:
           - dbt_expectations.expect_column_values_to_be_between:
-              min_value: 0
-              max_value: 100
+              arguments:
+                min_value: 0
+                max_value: 100
 
       - name: is_free
         description: "true si el juego es Free to Play."
@@ -48,7 +49,8 @@ models:
         tests:
           - not_null
           - accepted_values:
-              values: ['free', 'budget', 'mid', 'premium', 'aaa']
+              arguments:
+                values: ['free', 'budget', 'mid', 'premium', 'aaa']
 
       - name: owners_min
         description: "Limite inferior del rango de propietarios estimado por SteamSpy."
@@ -69,15 +71,17 @@ models:
         description: "Score entre 0 y 1. positive / (positive + negative)."
         tests:
           - dbt_expectations.expect_column_values_to_be_between:
-              min_value: 0
-              max_value: 1
+              arguments:
+                min_value: 0
+                max_value: 1
 
       - name: review_score_label
         description: "Etiqueta de review: Overwhelmingly Positive, Very Positive, Mixed, etc."
         tests:
           - not_null
           - accepted_values:
-              values: ['Overwhelmingly Positive', 'Very Positive', 'Mostly Positive', 'Mixed', 'Mostly Negative', 'Overwhelmingly Negative']
+              arguments:
+                values: ['Overwhelmingly Positive', 'Very Positive', 'Mostly Positive', 'Mixed', 'Mostly Negative', 'Overwhelmingly Negative']
 
       - name: current_players
         description: "Jugadores activos en el momento del snapshot."
@@ -134,7 +138,8 @@ models:
         description: "Jugadores activos en el momento del snapshot."
         tests:
           - dbt_expectations.expect_column_values_to_be_between:
-              min_value: 0
+              arguments:
+                min_value: 0
 
       - name: previous_players
         description: "Jugadores activos en el snapshot anterior. NULL si es el primero."
@@ -150,7 +155,8 @@ models:
         tests:
           - not_null
           - accepted_values:
-              values: ['growing', 'stable', 'declining', 'first_snapshot']
+              arguments:
+                values: ['growing', 'stable', 'declining', 'first_snapshot']
 
       - name: snapshot_at
         description: "Timestamp del snapshot."
