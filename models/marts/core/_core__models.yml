@@ -19,7 +19,8 @@ models:
           - unique
           - not_null
           - accepted_values:
-              values: ['free', 'budget', 'mid', 'premium', 'aaa']
+              arguments:
+                values: ['free', 'budget', 'mid', 'premium', 'aaa']
       - name: min_price_usd
         description: "Precio minimo del rango en dolares."
         tests:
@@ -87,7 +88,8 @@ models:
         tests:
           - not_null
           - accepted_values:
-              values: ['core_genre', 'monetization_model', 'release_state', 'other']
+              arguments:
+                values: ['core_genre', 'monetization_model', 'release_state', 'other']
 
   - name: dim_developer
     description: >
@@ -141,7 +143,8 @@ models:
         tests:
           - not_null
           - accepted_values:
-              values: ['free', 'budget', 'mid', 'premium', 'aaa']
+              arguments:
+                values: ['free', 'budget', 'mid', 'premium', 'aaa']
       - name: is_free
         description: "true si el juego es Free to Play."
         tests:
@@ -257,7 +260,8 @@ models:
         tests:
           - not_null
           - accepted_values:
-              values: ['common', 'uncommon', 'rare', 'ultra_rare']
+              arguments:
+                values: ['common', 'uncommon', 'rare', 'ultra_rare']
       - name: difficulty_rank
         description: "Ranking de dificultad dentro del juego. 1 = mas dificil."
         tests:
