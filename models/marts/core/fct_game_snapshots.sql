@@ -64,6 +64,7 @@ joined AS (
         e.review_score,
         e.review_score_label,
         e.price_usd,
+        e.price_eur,
         e.discount_pct,
         e.discount_pct > 0                          AS is_on_sale,
         s.snapshot_at,
