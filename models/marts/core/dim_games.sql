@@ -1,7 +1,7 @@
 -- =============================================================
 -- Modelo:      dim_games
 -- Capa:        Gold - Dimensiones
--- Descripcion: Dimension principal de juegos con SCD Type 2.
+-- Descripcion: Dimension principal de juegos.
 --              Rastrea cambios historicos en atributos del juego
 --              como precio, estado Early Access o nombre.
 --              Una fila por version del juego.
