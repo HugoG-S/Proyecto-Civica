@@ -49,7 +49,7 @@ GOLD.MARTS               ← Modelo dimensional Kimball para BI
 |---|---|---|
 | Staging | `stg_steamspy__games`, `stg_steam_store__games`, `stg_steam_players__snapshots`, `stg_steam_players__achievements` | view |
 | Intermediate | `int_games_enriched`, `int_player_trends` | view |
-| Gold dims | `dim_games` (SCD Type 2), `dim_date`, `dim_genre`, `dim_developer`, `dim_price_tier` | table |
+| Gold dims | `dim_games`, `dim_date`, `dim_genre`, `dim_developer`, `dim_price_tier` | table |
 | Gold facts | `fct_game_snapshots`, `fct_achievement_stats` | incremental |
  
 ```
