@@ -57,12 +57,20 @@ dbt build → PASS=135  WARN=0  ERROR=0
 ```
  
 ## Estructura del repositorio
- 
-![Stagings](https://i.postimg.cc/dkHyphWt/Captura-desde-2026-05-20-22-53-06.png)
 
-![Intermediate y Marts Core](https://i.postimg.cc/XGHCmr2Y/Captura-desde-2026-05-20-22-54-04.png)
+<img width="381" height="500" alt="Captura de pantalla 2026-05-21 160957" src="https://github.com/user-attachments/assets/62830f4d-675f-49ef-a735-4837b87d23c3" />
+<img width="381" height="500" alt="Captura de pantalla 2026-05-21 160931" src="https://github.com/user-attachments/assets/d31bc9d2-fd9c-4bfc-85df-5ddf63ce842d" />
 
  
+
+## PowerBI
+
+<img width="1410" height="788" alt="Captura de pantalla 2026-05-21 161620" src="https://github.com/user-attachments/assets/504ed682-770d-47e7-b98d-9ed6901dabb3" />
+<img width="1434" height="799" alt="Captura de pantalla 2026-05-21 161604" src="https://github.com/user-attachments/assets/a99a82bc-cf3b-40c6-837e-c1a1d1f4b24e" />
+
+
+
+
 ## Ejecución rápida
  
 ```bash
